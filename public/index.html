@@ -1,0 +1,230 @@
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+    
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background: linear-gradient(135deg, #74ebd5, #9face6);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+    
+        h1 {
+            font-size: 3em;
+            color: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.4);
+            margin-bottom: 20px;
+            animation: fadeInDown 1s ease-out;
+        }
+    
+        #taskForm {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+    
+        #taskInput {
+            width: 60%;
+            padding: 12px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+    
+        #taskInput:focus {
+            outline: none;
+            transform: scale(1.03);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+    
+        button {
+            padding: 12px 20px;
+            font-size: 1em;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+    
+        button:hover {
+            background: linear-gradient(135deg, #43e97b, #38f9d7);
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+    
+        ul {
+            list-style: none;
+            padding: 0;
+            max-width: 600px;
+            width: 90%;
+            margin: 0 auto;
+        }
+    
+        li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 20px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 25px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+    
+        li:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+    
+        li button {
+            padding: 8px 15px;
+            font-size: 0.9em;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(135deg, #ff6a6a, #ee0979);
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+    
+        li button:hover {
+            background: linear-gradient(135deg, #ff4b2b, #ff416c);
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+    
+            #taskInput {
+                width: 80%;
+            }
+    
+            button {
+                padding: 10px 15px;
+            }
+    
+            li {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+    
+            li button {
+                margin-top: 10px;
+                width: 100%;
+            }
+        }
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+    
+    
+</head>
+<body>
+    <h1>To-Do List</h1>
+    <form id="taskForm">
+        <input type="text" id="taskInput" placeholder="Add a new task..." required />
+        <button type="submit">Add Task</button>
+    </form>
+    <ul id="taskList"></ul>
+
+    <script>
+        const taskForm = document.getElementById("taskForm");
+        const taskInput = document.getElementById("taskInput");
+        const taskList = document.getElementById("taskList");
+
+        
+        const fetchTasks = async () => {
+            try {
+                const res = await fetch("/api/tasks");
+                if (!res.ok) throw new Error("Failed to fetch tasks");
+                const tasks = await res.json();
+                taskList.innerHTML = "";
+                tasks.forEach((task, index) => {
+                    const li = document.createElement("li");
+                    li.textContent = task;
+
+                    const deleteBtn = document.createElement("button");
+                    deleteBtn.textContent = "Delete";
+                    deleteBtn.type = "button"; 
+                    deleteBtn.onclick = () => deleteTask(index);
+
+                    li.appendChild(deleteBtn);
+                    taskList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Error fetching tasks:", error);
+            }
+        };
+
+        
+        const addTask = async (task) => {
+            try {
+                const res = await fetch("/api/tasks", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ task }),
+                });
+                if (!res.ok) throw new Error("Failed to add task");
+                fetchTasks();
+            } catch (error) {
+                console.error("Error adding task:", error);
+            }
+        };
+
+        
+        const deleteTask = async (index) => {
+            try {
+                const res = await fetch(`/api/tasks/${index}`, { method: "DELETE" });
+                if (!res.ok) throw new Error("Failed to delete task");
+                fetchTasks();
+            } catch (error) {
+                console.error("Error deleting task:", error);
+            }
+        };
+
+        
+        taskForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const task = taskInput.value.trim();
+            if (task) {
+                addTask(task);
+                taskInput.value = "";
+            }
+        });
+        fetchTasks();
+    </script>
+</body>
+</html>
